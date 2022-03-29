@@ -9,6 +9,6 @@
     }
   ],
   "development": {
-    "main": "http://127.0.0.1:9001/home/index.html"
+    "main": "http://127.0.0.1:9001/index.html"
   }
 }
