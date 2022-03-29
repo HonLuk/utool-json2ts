@@ -1,0 +1,14 @@
+{
+  "main": "./index.html",
+  "logo": "./logo.png",
+  "features": [
+    {
+      "code": "j2t",
+      "explain": "Json字符串转Typescript类型",
+      "cmds":["json2ts", "jsonToTypescript","json2type"]
+    }
+  ],
+  "development": {
+    "main": "http://127.0.0.1:9001/home/index.html"
+  }
+}
