@@ -112,7 +112,7 @@ const init = async (theme: keyof typeof themeMap) => {
         // windows linux 模拟粘贴
         utools.simulateKeyboardTap("v", "ctrl");
       }
-    });
+    }, 100);
   } else {
     let clipboardData = "";
     try {
