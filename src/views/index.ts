@@ -112,21 +112,24 @@ const init = async (theme: keyof typeof themeMap) => {
         // windows linux 模拟粘贴
         utools.simulateKeyboardTap("v", "ctrl");
       }
-    }, 100);
+    }, 200);
   } else {
-    let clipboardData = "";
-    try {
-      clipboardData = await navigator.clipboard.readText();
-      inputInstance.setValue(clipboardData);
-    } catch (e) {}
+    setTimeout(async () => {
+      let clipboardData = "";
+      try {
+        clipboardData = await navigator.clipboard.readText();
+        console.log(clipboardData);
+        inputInstance.setValue(clipboardData);
+      } catch (e) {}
+    }, 200);
   }
 };
 
 //设置复制按钮
-function setCopyButton(theme: keyof typeof themeMap, outputInstance: any) {
+function setCopyButton(theme: keyof typeof themeMap, outputInstance: IStandaloneCodeEditor) {
   const old = document.querySelector("#_copy");
   if (old) {
-    document.body.removeChild(document.body.removeChild(old));
+    document.body.removeChild(old);
   }
   if (!outputInstance.getValue()) {
     return;
@@ -139,9 +142,20 @@ function setCopyButton(theme: keyof typeof themeMap, outputInstance: any) {
   }
 
   copyButton.onclick = () => {
+    const range = outputInstance.getModel()?.getFullModelRange();
+    range &&
+      outputInstance.setSelections([
+        {
+          selectionStartColumn: 0,
+          selectionStartLineNumber: 0,
+          positionColumn: range.endColumn,
+          positionLineNumber: range.endLineNumber
+        }
+      ]);
     if (window.utools) {
       window.utools.copyText(outputInstance.getValue());
       window.utools.showNotification("复制成功");
+      return;
     }
     new ClipboardJS(copyButton, {
       text: function(trigger) {
