@@ -12,15 +12,21 @@ import json2ts from "./json2ts";
 import ClipboardJS from "clipboard";
 import { editor } from "monaco-editor";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-let inputInstance: IStandaloneCodeEditor, outputInstance: IStandaloneCodeEditor;
+let inputInstance: IStandaloneCodeEditor | undefined, outputInstance: IStandaloneCodeEditor | undefined;
 const themeMap = {
   dark: "vs-dark",
   light: "vs"
 };
+let isLoadWASM = false;
 const init = async (theme: keyof typeof themeMap) => {
+  if (!isLoadWASM) {
+    try {
+      await loadWASM(`${base}/asset/onigasm/onigasm.wasm`);
+      isLoadWASM = true;
+    } catch (e) {}
+  }
   if (!inputInstance && !outputInstance) {
     //校验
-    await loadWASM(`${base}/asset/onigasm/onigasm.wasm`);
     //不做提示
     (window as any).MonacoEnvironment = {
       getWorkerUrl: function(moduleId, label) {
@@ -86,43 +92,44 @@ const init = async (theme: keyof typeof themeMap) => {
       // 使用定义的主题
       monaco.editor.setTheme("OneDark");
     }
-    inputInstance.onDidChangeModelContent(() => {
-      outputInstance.setValue(json2ts(inputInstance.getValue()));
-      setCopyButton(theme, outputInstance);
+    inputInstance!.onDidChangeModelContent(() => {
+      outputInstance?.setValue(json2ts(inputInstance!.getValue()));
+      setCopyButton(theme, outputInstance!);
     });
     await Promise.all([
       wireTmGrammars(monaco, inputRegistry, inputGrammars, inputInstance),
       wireTmGrammars(monaco, outputRegistry, outputGrammars, outputInstance)
     ]);
     window.onresize = function() {
-      inputInstance.layout();
-      outputInstance.layout();
+      inputInstance?.layout();
+      outputInstance?.layout();
     };
   }
   //处理刚进入
-  inputInstance.setValue("");
-  inputInstance.setScrollTop(0);
-  if (window.utools) {
-    setTimeout(() => {
-      inputInstance.focus();
-      if (window.utools.isMacOs()) {
-        // macos 模拟粘贴
-        utools.simulateKeyboardTap("v", "command");
-      } else {
-        // windows linux 模拟粘贴
-        utools.simulateKeyboardTap("v", "ctrl");
-      }
-    }, 200);
-  } else {
-    setTimeout(async () => {
-      let clipboardData = "";
-      try {
-        clipboardData = await navigator.clipboard.readText();
-        console.log(clipboardData);
-        inputInstance.setValue(clipboardData);
-      } catch (e) {}
-    }, 200);
-  }
+  setTimeout(async () => {
+    inputInstance?.setValue("");
+    inputInstance?.setScrollTop(0);
+    // if (window.utools) {
+    //   inputInstance.focus();
+    //   if (window.utools.isMacOs()) {
+    //     // macos 模拟粘贴
+    //     utools.simulateKeyboardTap("v", "command");
+    //   } else {
+    //     // windows linux 模拟粘贴
+    //     utools.simulateKeyboardTap("v", "ctrl");
+    //   }
+    // } else {
+    let clipboardData = "";
+    try {
+      clipboardData = await navigator.clipboard.readText();
+      inputInstance?.setValue(clipboardData);
+    } catch (e) {
+      inputInstance?.setValue("");
+    } finally {
+      inputInstance?.setScrollTop(0);
+    }
+    // }
+  }, 100);
 };
 
 //设置复制按钮
@@ -165,11 +172,28 @@ function setCopyButton(theme: keyof typeof themeMap, outputInstance: IStandalone
   };
   document.body.appendChild(copyButton);
 }
+function clearEditor() {
+  inputInstance = undefined;
+  outputInstance = undefined;
+  const app = document.querySelector("#app")! as HTMLDivElement;
+  const inputEditor = (document.querySelector(".input-editor") as HTMLDivElement)!;
+  const outputEditor = (document.querySelector(".output-editor") as HTMLDivElement)!;
+  app.removeChild(inputEditor);
+  app.removeChild(outputEditor);
+  const newInput = document.createElement("div");
+  newInput.classList.add("input-editor");
+  app.appendChild(newInput);
 
+  const newOutput = document.createElement("div");
+  newOutput.classList.add("output-editor");
+  app.appendChild(newOutput);
+}
 if (window.utools) {
   window.utools.onPluginEnter(() => {
+    clearEditor();
     init(window.utools.isDarkColors() ? "dark" : "light");
   });
 } else {
+  clearEditor();
   init("dark");
 }
