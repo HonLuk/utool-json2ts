@@ -1,7 +1,7 @@
 {
   "name": "static",
-  "version": "1.0.0",
-  "description": "研究生平台静态页",
+  "version": "1.0.1",
+  "description": "json2ts",
   "scripts": {
     "build": "easy build && node ./build.done.js",
     "serve": "easy dev",

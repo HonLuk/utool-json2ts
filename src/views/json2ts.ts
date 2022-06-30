@@ -6,7 +6,7 @@ const json2ts = function(codeText: string): string {
       // 去除注释后的文本
       return /^\/{2,}/.test(word) || /^\/\*/.test(word) ? "" : word;
     })
-    .replace(/[\n|...|\s+]/g, "")
+    .replace(/[\n|\s+]/g, "")
     .replace(/,}$/, "}")
     .replace(/00,/g, "0,")
     .replace(/},]/g, "}]");
